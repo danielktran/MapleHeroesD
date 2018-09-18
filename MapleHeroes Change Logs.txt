@@ -1,0 +1,223 @@
+[To Do]
+- Fix MP heal bug; After using skills that drain MP, the MP passive heal will regenerate to the original MP + 3. Ex: 3000MP - 1000MP (skill use) then heals to 3003, not 2003.
+- Add a functionality that will not overwrite buffs if the former buff values are higher
+- Sniff and fix guild expand packets, new guild creation packets, guild BBS packets, and guild skill packets
+- Fix characters not able to rejoin a guild after leaving or being expelled
+- Fix char spawn stance; Not really a big deal.
+- Fix character creation for other classes
+- Fix MP heal over time
+- Refine monster controllers/spawn
+- Fix reactor; need to add char ID to packet structure
+- Add MapleTalk Server
+
+[Gameplay/Scripting To Do]
+- Reactor at "Inside the Dangerous Forest" 4000014 doesn't drop "First Explorer Gift Box" 4033915
+- Reactor at "Southperry" 4000030 doesn't drop "Boat Boarding Ticket" 4033914
+
+[Notes]
+- Mobs spawn functionality is buggy. Mobs that were previously spawned, freeze when a player re-enters the map.
+- When there are more than two players in the map, mobs' movement becomes buggy and teleports around the map. I suspect this is because when one mob leaves one player's view while it's still in shown in another player's view, the syncing between this event is wrong and causes mobs to teleport. I've deduced that it has something to do with managing monster controllers.
+- Chat handling is different from Nexon's. Have to code a MapleTalk server in order for buddychat and guildchat to work.
+- When new players spawn into a map with existing players, the former views the latter in the jump state. 
+- When creating a guild, the GuildPacket.newGuildInfo() is wrong so it doesn't refresh the guild. You'd have to change channels or relog to see the guild. This is fixable by sending the correct packet, however I forgot to save the guild creation packets.
+- When attempting to change Guild Rank Titles, pressing save shows a "It cannot be used. Please check it again." message in the client.
+
+[Rev 6]
+- Updated source for Netty implementation
+
+[Rev 5.3]
+- Added MapleExp & MapleExpStatus class; Added for clean object and structural organization
+- Added proper CWvsContext.InfoPacket.gainExpMessage(); This fixes exp status messages not showing anymore than 1 line and GMS like.
+- Added PacketHelper.writeExpMask()
+- Added MapleMonster.calculateBlessedEnsembleExp(); Doesn't do anything yet.
+- Updated DamageParse.applyMagicAttack(); This allows active skills to apply monster statuses.
+- Updated PartyOperationHandler party invitation case; This fixes an overlooked NullPointerException.
+- Updated MapleBuffStat ELEMENT_RESET
+
+[Rev 5.2]
+- Added MapleCharacter.cancelBlessedEnsemble() to MapleClient.removeTask(); This fixes Blessed Ensemble still running after the player has logged off.
+- Added World.updateBlessedEnsemble() to World.updateParty(); This fixes Blessed Ensemble handling when party members join/leave the party.
+- Added Skills class constants; Hopefully this structure and design pattern clears ambiguous variables and values. Will eventually add every skill as we come across/need them.
+- Added Jobs class constants; Again, hopefully this helps with structure and design.
+- Updated MagicianBuff Bless, Divine Protection, Advanced Blessing; They should read the correct buffstat value now.
+- Updated RecvPacketOpcode NPC_ACTION, ITEM_PICKUP
+- Updated PlayerStats passive skills and renamed alot of ugly/ambiguous variables. The skill changelog can be found here https://docs.google.com/spreadsheets/d/1y04Qo8GXhkjTNaPosEWp95YJ-Ygm0C4slxMzmzeGk5k/edit?usp=sharing
+
+[Rev 5.1]
+- Updated MapleGuild & MapleGuildCharacter; Fixed an issue where individualGP was not being loaded from the database.
+- Added Blessed Ensemble and Blessed Harmony; This is a more proper implementation which includes the use of Timer. It currently works for all cases except for when there are two Bishops in the party, and when you reinvite a party member that already had your buff; the latter is easily fixed by rebuffing. The current working cases are 1) buffing party members, 2) cancelling owner and party members' buffs, and 3) party member leaving. There is a bug in which the Timer does not cancel if the player quits the game.
+
+[Rev 5]
+- Updated to v173.1
+- Changed Skills enum to a class of constants
+- Added HolyFountainHandler and appropriate recv opcode
+- Updated MapleBuffStat BLESSED_ENSEMBLE
+- Added a hacky Blessed Ensemble; It's not properly implemented at all. Will redo.
+- Removed SkillProcessor; Didn't see a point to this by design.
+
+[Rev 4.2]
+- Added TalkPackets and opcodes
+- Updated AbstractScriptManager.getInvocable() to support Java 8 nashorn scripting engine; This fixes import errors from event scripts at startup.
+- Updated MobPacket.applyMonsterStatus(); Does not support all skills, only Heal at the moment. Will need to sniff more packets in order to properly implement structure.
+- Updated MapleStatEffect.parseEval(); This fixes v172+ Skill.wz.xml files causing exception errors during launches.
+- Updated MapleLifeFactory.getMonsterStats(); This fixes v172+ Mob.wz.xml files causing exception errors during launches.
+- Updated LoginInformationProvider(); This fixes v172+ Etc.wz.xml files causing exception errors during launches.
+
+[Rev 4.1]
+- Added & Updated RecvPacketOpcodes for guilds and familiars
+- Updated SendPacketOpcodes for MULTICHAT, ALLIANCE, DIFFERENT_IP, FAMILIARS, SPAWN_MECH_DOOR, USE_MECH_DOOR, REMOVE_MECH_DOOR
+- Updated Heracle (2010007) NPC Script
+- Added an 'individualGP' integer to MapleCharacter, MapleGuildCharacter, and the SQL database as well as get & set methods
+- Updated MapleGuild.gainContribution(), setOfflineGuildStatus(), setGuildAndRank() to include 'individualGP'
+- Added & Updated GuildOperationHandler & CWvsContext.GuildPacket; This fixes accepting guild invitation, creating guild, inviting players to guild, leaving guild, expelling member from guild, changing guild rank titles, changing member's rank, and changing guild emblem.
+
+[Rev 4]
+- Added nearly all the channel handlers and removed most of the old handlers
+- Updated MapleBuffStats HYPER_DAMAGE_PERCENT, HYPER_ATTACK_SPEED, SPIRIT_CLAW, ANGEL, BOUNDLESS_RAGE, LEECH_AURA, DASH_SPEED, DASH_JUMP, DIABOLIC_RECOVERY, ASSASSINS_MARK
+- Updated MonsterStatus WATK, WDEF, SPEED, STUN, KNOCKDOWN, SHOWDOWN, SHADOW_WEB, VENOMOUS_WEAPON, DAMAGE_PERCENT
+- Added in AttackInfo a byte flag; This allows DamageParse to read a flag byte and handles skills properly.
+- Updated DamageParse.parseRangeDamage(); This fixes damage not working when using certain skills such as Shadow Partner or Shadow Star. Fixed through the flag byte from previous comment.
+- Updated RecvPacketOpcode and SendPacketOpcodes; Most of them are guesses.
+- Removed some redundant buffstat handlers in MapleStatEffect
+- Added Assassin's Mark; The buff shows, but the effect still needs to be coded.
+- Updated AbstractSkillHandler.giveBuff(); This fixes Dark Sight locally.
+- Updated CWvsContext.giveForeignBuff(); This fixes Dark Sight from d/cing other players.
+
+[Rev 3.4]
+- Updated DamageParse.parseMagicDamage & parseCloseRangeDamage to read more unknown bytes
+- Updated CField.addAttackInfo() to GMS-like structure using IDA; This fixes damage and animation display between characters.
+- Added in MapleBuffStats: BIG_BANG, BC_DAMAGE_PERCENT, BC_ATTACK_SPEED; Temporary names
+- Added in MagicianBuff effect statups and info for Big Bang buff (2321001)
+- Updated DamageParse.applyMagicAttack(); Genesis now casts the Big Bang buff and can use Big Bang without charging.
+- Updated CField.cancelChair(); This fixes d/c when character cancels their chair.
+
+[Rev 3.3]
+- Minor update to V.172.2
+- Added Priest Job Advancement
+- Added level skill to skills Map in MapleCharacter. This fixes leveling skill not doing damage.
+- Updated DamagePrase.parseDmgM(); This fixes Teleport Mastery not doing damage.
+- Updated CField.spawnMysticDoor(); This fixes Mystic Door d/c when using the skill.
+- Modified SkillFactory; This changes the way Skill.wz files are chosen to load. Instead of loading Skill.wz.img files of length <= 9, it reads all files starting with a numerical file.
+- Added summon handlers to PacketProcessor
+- Fixed CField.SummonPacket.spawnSummon(); This fixes d/cing when summoning.
+- Updated SummonAttackHandler; This fixes summon's attacks not registering damage.
+- Updated majority of CWvsContext opcodes
+- Updated AbstractSkillHandler.giveBuff() for Maple Warrior
+- Updated MapleStatEffect.applyTo(); This fixes Bless overriding Advanced Bless.
+- Updated MapleStatEffect.applyBuffEffect, changed applyto.cancelEffect() override to false; This makes it so it doesn't send a CANCEL_BUFF packet everytime a player buffs. It's more GMS like.
+- Changed SkillProcessor to use a HashMap<Integer, SkillHandler> instead of Array; Hopefully this saves memory and is more efficient.
+- Updated PacketHelper.writeMask & writeBuffMask(); This fixes BuffStats flags incorrectly added to array.
+
+[4/26/2016]
+- Fixed Magic Guard taking in wrong damage
+- Fixed revive ui not showing when player dies
+- Added some job advancement quests for Cleric and I/L Wizard
+
+[4/23/2016]
+- Updated RecvPacketOpcode and SendPacketOpcode to v172.1
+- Updated CField.getCharInfo() and CField.spawnPlayerMapobject(); Can now login to the channel
+
+[4/18/2016]
+- Updated MapleQuest.complete() packets; This fixes the complete quest effect.
+- Updated CWvsContext.getShowItemGain() packets; This fixes the complete quest effect.
+- Updated CField.setBoatState() packets
+
+[4/17/2016]
+- Updated MapleBuffStats for HP_BOOST, MP_BOOST, MDEF, HOLY_SYMBOL, MAXHP, MAXMP, STANCE, HOLY_SHIELD, INFINITY, TELEPORT_MASTERY, BEHOLDER, HOLY_MAGIC_SHELL, PRESSURE_VOID, CROSS_SURGE
+- Added more channel handlers
+- Updated RecvPacketOpcode and SendPacketOpcode
+
+[4/16/2016]
+- Added more channel handlers
+- Created constructors for each handler class to accept the RecvPacketOpcode as an argument.
+- Added getRecvOpcode() to AbstractMaplePacketHandler. This allows handler.getRecvOpcode() to call the specific RecvPacketOpcode that was used.
+
+[4/15/2016]
+- Updated MapleBuffStats for INVINCIBLE, BLESS, BLESSED_ENSEMBLE
+- Updated MapScriptMethods for case Advanture_tuto00, Advanture_tuto01, Advanture_tuto11
+- Added PacketProcessor
+- Finished adding login handlers
+- Updated MapleServerHandler to work with PacketProcessor, success!
+
+[4/6/2016]
+- Added ChangePicHandler.handlePacket(); Partially handles changing PIC. It is missing the check for using an old PIC and using repeated characters in PIC.
+- Updated GAME_MESSAGE, MULTICHAT, PARTYCHAT; This fixes general chat and party chat.
+
+[4/4/2016]
+- Updated MobPacket.moveMonster(); This synchronizes monster movement between players.
+- Updated CWvsContext.PartyPacket.partyRequestInvite() and added to PartyHandler.partyOperation(); This creates a popup message when the leader tries to invite a player.
+- Updated CField.addAttackInfo(); This partially fixes seeing other players' damage.
+
+[4/2/2016]
+- Added partyName parameter to Party.createParty()
+- Added name parameter to MapleParty.MapleParty() constructor and MapleParty.getName(); This allows party objects to store the name of the party.
+- Renamed PartyHandler.DenyPartyRequest() to partyRequest()
+- Updated PartyHandler.partyRequest(); Players can now join other players' party.
+- Updated PartyHandler.partyOperation(); Players can now create a new party.
+- Updated MapleParty.createParty(); Automatically create's a party with the name of "<Char Name>'s Party" if a name is not chosen.
+- Updated CWvsContext.PartyPacket.partyInvite(), addPartyStatus(), and updateParty()
+
+
+[4/1/2016]
+- Added MapleTalkServer; Not fully functional, it only listens to port 8785 at the moment.
+- Updated CField.spawnPlayerMapobject(); This fixes other players' spawning.
+- Updated StaticLifeMovement.serialize(); This fixes other players' movements.
+- Updated CField.addAttackInfo(); This partially fixes other players' attack animations.
+- Removed previous revision to MapleClient.getLoginState(); This prevents other players from logging into an account that was already logged on.
+
+[3/30/2016]
+- Updated SharkLogger.dump() for MapleClient.disconnect(); This fixes being unable to login to character after logging off and rollback issues when logging off.
+- Updated MapleClient.getLoginState(); This fixes being unable to login to account after logging off.
+- Updated WHISPER
+
+[3/28/2016]
+- Updated CWvsContext.PartyPacket.partyCreated(), added String partyName paraemter
+- Updated CWvsContext.PartyPacket.updateParty()
+- Updated DamageParse.partyDmgMa() packet structure; This fixes magic attacks.
+
+[3/26/2016]
+- Updated CONFIRM_SHOP_TRANSACTION; This fixes recharging stars.
+- Updated KEYMAP; This fixes keymap issues.
+- Updated CHANGE_CHANNEL
+- Updated MapleBuffStats for AVOID, SOULARROW, SHARP_EYES, MAPLE_WARRIOR, DEX
+- Updated MOVE_SUMMON, SUMMON_ATTACK, DAMAGE_SUMMON, SUB_SUMMON, REMOVE_SUMMON, CHAR_INFO_REQUEST, CHAR_INFO, PARTY_OPERATION (Recv & Send)
+
+[3/25/2016]
+- Updated to Version 171.3
+- Updated DamageParse.parseDmgR() packet structure; Fixed ranged attacks
+- Updated MapleBuffStats for WATK, WDEF, MATK, MAGIC_GUARD, BOOSTER, POWERGUARD, COMBO, SHADOWPARTNER
+
+[3/24/2016]
+- Updated to Version 171.2
+- Fixed channel population percentage by modifying LoginWorker.registerClient() 
+
+[3/19/2016]
+- Removed mapleversion parameter in LoginPacket.getHello()
+- Updated PlayerHandler.MovePlayer(); Player position is now properly updated by server
+
+[3/18/2016]
+- Updated MobHandler.MoveMonster() & MovementParse.parseMovement()
+
+[3/16/2016]
+- QUICK_MOVE updated
+- GIVE_BUFF packet structure updated but not complete (Looked in IDA)
+- CANCEL_BUFF updated
+- Updated MapleBuffStats for Speed, Jump, Recovery, & Dark Sight
+
+[3/15/2016]
+- showHpHealed updated
+- GIVE_BUFF work in progress
+
+[3/13/2016]
+- NPC Action completed
+- SHOW_SPECIAL_EFFECT beginning job tutorial completed
+- UPDATE_STATS updated
+- DROP_ITEM_FROM_MAPOBJECT updated but drop position is incorrect
+- SPAWN_MONSTER, SPAWN_MONSTER_RESPONSE updated but can only attack mobs at spawn point
+- MOVE_MONSTER_RESPONSE updated
+
+[3/12/2016]
+- getCharInfo() updated
+- NPC_TALK updated
+- NPC_SHOP updated
+- Login
